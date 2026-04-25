@@ -1,0 +1,64 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+
+      routes:
+        # ── Chat: WebSocket и сообщения ──
+        - id: chat-messages
+          uri: ${CHAT_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/deals/*/messages, /deals/*/messages/**
+          filters:
+            - RewritePath=/deals/(?<dealId>[^/]+)/messages(?<rest>.*), /deals/$\{dealId}/messages$\{rest}
+
+        - id: chat-websocket
+          uri: ${CHAT_SERVICE_URL:lb://chat-service}
+          predicates:
+            - Path=/ws/**
+
+        # ── Auth и профили пользователей ──────────────────────────────────
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/auth/**, /users/**
+
+        # ── Listings (объявления, фото, избранное) ─────────────────────────
+        - id: listings-service
+          uri: ${LISTINGS_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/listings/**
+
+        # ── Deals (сделки) ─────────────────────────────────────────────────
+        - id: deals-service
+          uri: ${DEALS_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/deals/**
+
+jwt:
+  secret: ${JWT_SECRET:super-secret-key-for-development-only-32chars}
+
+gateway:
+  public-paths:
+    - /auth/register
+    - /auth/login
+    - /auth/refresh
+    - /actuator/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    com.plantswap.gateway: DEBUG
