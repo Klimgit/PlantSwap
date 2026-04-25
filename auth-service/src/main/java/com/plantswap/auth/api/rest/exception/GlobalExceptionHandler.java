@@ -51,12 +51,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ErrorResponse handleInvalidCredentials(InvalidCredentialsException ex) {
+        log.warn("Неудачная попытка входа: {}", ex.getMessage());
         return ErrorResponse.of(HttpStatus.UNAUTHORIZED.value(), "INVALID_CREDENTIALS", ex.getMessage());
     }
 
     @ExceptionHandler(InvalidTokenException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ErrorResponse handleInvalidToken(InvalidTokenException ex) {
+        log.warn("Недействительный токен: {}", ex.getMessage());
         return ErrorResponse.of(HttpStatus.UNAUTHORIZED.value(), "INVALID_TOKEN", ex.getMessage());
     }
 

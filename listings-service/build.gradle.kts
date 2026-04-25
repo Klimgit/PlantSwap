@@ -11,6 +11,7 @@ dependencyManagement {
 }
 
 dependencies {
+    implementation(project(":shared-logging"))
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.spring.boot.starter.security)
