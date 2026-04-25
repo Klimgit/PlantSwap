@@ -15,6 +15,7 @@ dependencies {
     implementation(libs.spring.cloud.gateway)
     implementation(libs.spring.cloud.loadbalancer)
     implementation(libs.spring.boot.starter.actuator)
+    implementation("org.springframework.boot:spring-boot-starter-security")
 
     implementation(libs.jjwt.api)
     runtimeOnly(libs.jjwt.impl)
