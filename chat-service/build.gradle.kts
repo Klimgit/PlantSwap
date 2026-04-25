@@ -13,6 +13,7 @@ dependencyManagement {
 dependencies {
     implementation(project(":shared-proto"))
 
+    implementation(project(":shared-logging"))
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.websocket)
     implementation(libs.spring.boot.starter.data.jpa)
