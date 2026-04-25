@@ -8,6 +8,8 @@ import com.plantswap.auth.application.result.TokenPair;
 import com.plantswap.auth.application.result.UserProfile;
 import com.plantswap.auth.domain.model.*;
 import com.plantswap.auth.domain.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,8 @@ public class UserService implements
         RefreshTokenUseCase,
         LogoutUseCase,
         GetUserProfileUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private static final long REFRESH_TOKEN_TTL_DAYS = 30;
 
@@ -66,6 +70,7 @@ public class UserService implements
 
         user.pullDomainEvents().forEach(eventPublisher::publish);
 
+        log.info("Пользователь зарегистрирован: id={}, username={}", user.id(), username);
         return toProfile(user);
     }
 
@@ -73,11 +78,17 @@ public class UserService implements
     public TokenPair login(LoginCommand command) {
         Email email = new Email(command.email());
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> UserNotFoundException.byEmail(email.value()));
+                .orElseThrow(() -> {
+                    log.warn("Попытка входа с несуществующим email: {}", email);
+                    return UserNotFoundException.byEmail(email.value());
+                });
 
-        if (!passwordEncoder.matches(command.rawPassword(), user.passwordHash().value()))
+        if (!passwordEncoder.matches(command.rawPassword(), user.passwordHash().value())) {
+            log.warn("Неверный пароль для пользователя: id={}, username={}", user.id(), user.username());
             throw new InvalidCredentialsException("Неверный email или пароль");
+        }
 
+        log.info("Пользователь вошёл в систему: id={}, username={}", user.id(), user.username());
         return issueTokenPair(user);
     }
 
@@ -87,7 +98,10 @@ public class UserService implements
 
         RefreshToken stored = refreshTokenRepository.findByTokenHash(tokenHash)
                 .filter(t -> !t.isExpiredOrRevoked())
-                .orElseThrow(() -> new InvalidTokenException("Refresh-токен недействителен или истёк"));
+                .orElseThrow(() -> {
+                    log.warn("Попытка использовать недействительный или истёкший refresh-токен");
+                    return new InvalidTokenException("Refresh-токен недействителен или истёк");
+                });
 
         stored.revoke();
         refreshTokenRepository.save(stored);
@@ -95,12 +109,14 @@ public class UserService implements
         User user = userRepository.findById(stored.userId())
                 .orElseThrow(() -> UserNotFoundException.byId(stored.userId().toString()));
 
+        log.debug("Refresh-токен обновлён для пользователя: id={}", user.id());
         return issueTokenPair(user);
     }
 
     @Override
     public void logout(UUID userId) {
         refreshTokenRepository.revokeAllByUserId(UserId.of(userId));
+        log.info("Пользователь вышел из системы: id={}", userId);
     }
 
     @Override
