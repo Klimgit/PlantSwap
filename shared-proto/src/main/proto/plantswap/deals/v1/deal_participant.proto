@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package plantswap.deals.v1;
+
+option java_package = "com.plantswap.deals.grpc";
+option java_outer_classname = "DealParticipantProto";
+option java_multiple_files = true;
+
+service DealParticipantService {
+  rpc CheckParticipant (CheckParticipantRequest)
+      returns (CheckParticipantResponse);
+}
+
+message CheckParticipantRequest {
+  string deal_id = 1;
+  string user_id = 2;
+}
+
+message CheckParticipantResponse {
+  bool   is_participant = 1;
+  string requester_id   = 2;
+  string owner_id       = 3;
+}

@@ -1,0 +1,218 @@
+services:
+
+  # ── Kafka (KRaft, no Zookeeper) ──────────────────────────────────────────
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: plantswap-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qg=="
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ── MinIO ─────────────────────────────────────────────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: plantswap-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Auth DB ───────────────────────────────────────────────────────────────
+  auth-db:
+    image: postgres:16-alpine
+    container_name: plantswap-auth-db
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: auth_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth_user -d auth_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Listings DB ───────────────────────────────────────────────────────────
+  listings-db:
+    image: postgres:16-alpine
+    container_name: plantswap-listings-db
+    environment:
+      POSTGRES_DB: listings_db
+      POSTGRES_USER: listings_user
+      POSTGRES_PASSWORD: listings_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - listings-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U listings_user -d listings_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Deals DB ──────────────────────────────────────────────────────────────
+  deals-db:
+    image: postgres:16-alpine
+    container_name: plantswap-deals-db
+    environment:
+      POSTGRES_DB: deals_db
+      POSTGRES_USER: deals_user
+      POSTGRES_PASSWORD: deals_pass
+    ports:
+      - "5434:5432"
+    volumes:
+      - deals-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U deals_user -d deals_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Chat DB ───────────────────────────────────────────────────────────────
+  chat-db:
+    image: postgres:16-alpine
+    container_name: plantswap-chat-db
+    environment:
+      POSTGRES_DB: chat_db
+      POSTGRES_USER: chat_user
+      POSTGRES_PASSWORD: chat_pass
+    ports:
+      - "5435:5432"
+    volumes:
+      - chat-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chat_user -d chat_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Auth Service ──────────────────────────────────────────────────────────
+  auth-service:
+    build: ./auth-service
+    container_name: plantswap-auth
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://auth-db:5432/auth_db
+      SPRING_DATASOURCE_USERNAME: auth_user
+      SPRING_DATASOURCE_PASSWORD: auth_pass
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET: ${JWT_SECRET:-super-secret-key-for-development-only-change-in-prod}
+    depends_on:
+      auth-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # ── Listings Service ──────────────────────────────────────────────────────
+  listings-service:
+    build: ./listings-service
+    container_name: plantswap-listings
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://listings-db:5432/listings_db
+      SPRING_DATASOURCE_USERNAME: listings_user
+      SPRING_DATASOURCE_PASSWORD: listings_pass
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MINIO_URL: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_BUCKET: plantswap-photos
+    depends_on:
+      listings-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  # ── Deals Service ─────────────────────────────────────────────────────────
+  deals-service:
+    build: ./deals-service
+    container_name: plantswap-deals
+    ports:
+      - "8083:8083"
+      - "9090:9090"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://deals-db:5432/deals_db
+      SPRING_DATASOURCE_USERNAME: deals_user
+      SPRING_DATASOURCE_PASSWORD: deals_pass
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      LISTINGS_SERVICE_URL: http://listings-service:8082
+    depends_on:
+      deals-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # ── Chat Service ──────────────────────────────────────────────────────────
+  chat-service:
+    build: ./chat-service
+    container_name: plantswap-chat
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://chat-db:5432/chat_db
+      SPRING_DATASOURCE_USERNAME: chat_user
+      SPRING_DATASOURCE_PASSWORD: chat_pass
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      GRPC_DEALS_ADDRESS: static://deals-service:9090
+    depends_on:
+      chat-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # ── API Gateway ───────────────────────────────────────────────────────────
+  gateway:
+    build: ./gateway
+    container_name: plantswap-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-super-secret-key-for-development-only-change-in-prod}
+      AUTH_SERVICE_URL: http://auth-service:8081
+      LISTINGS_SERVICE_URL: http://listings-service:8082
+      DEALS_SERVICE_URL: http://deals-service:8083
+      CHAT_SERVICE_URL: http://chat-service:8084
+    depends_on:
+      - auth-service
+      - listings-service
+      - deals-service
+      - chat-service
+
+volumes:
+  auth-db-data:
+  listings-db-data:
+  deals-db-data:
+  chat-db-data:
+  minio-data:
