@@ -6,9 +6,9 @@ spring:
     name: chat-service
 
   datasource:
-    url: ${CHAT_DB_URL:jdbc:postgresql://localhost:5435/chat_db}
-    username: ${CHAT_DB_USER:chat}
-    password: ${CHAT_DB_PASSWORD:chat}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5435/chat_db}
+    username: ${SPRING_DATASOURCE_USERNAME:chat}
+    password: ${SPRING_DATASOURCE_PASSWORD:chat}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -24,13 +24,13 @@ spring:
     locations: classpath:db/migration
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
 # gRPC-клиент для deals-service
 grpc:
   client:
     deals-service:
-      address: ${DEALS_GRPC_ADDRESS:static://localhost:9090}
+      address: ${GRPC_DEALS_ADDRESS:static://localhost:9090}
       negotiation-type: plaintext
 
 management:

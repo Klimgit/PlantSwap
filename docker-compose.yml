@@ -210,6 +210,15 @@ services:
       - deals-service
       - chat-service
 
+  # ── Frontend ──────────────────────────────────────────────────────────────
+  frontend:
+    build: ./frontend
+    container_name: plantswap-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - gateway
+
 volumes:
   auth-db-data:
   listings-db-data:

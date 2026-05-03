@@ -6,9 +6,9 @@ spring:
     name: deals-service
 
   datasource:
-    url: ${DEALS_DB_URL:jdbc:postgresql://localhost:5434/deals_db}
-    username: ${DEALS_DB_USER:deals}
-    password: ${DEALS_DB_PASSWORD:deals}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5434/deals_db}
+    username: ${SPRING_DATASOURCE_USERNAME:deals}
+    password: ${SPRING_DATASOURCE_PASSWORD:deals}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -24,7 +24,7 @@ spring:
     locations: classpath:db/migration
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
