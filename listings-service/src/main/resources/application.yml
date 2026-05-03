@@ -6,9 +6,9 @@ spring:
     name: listings-service
 
   datasource:
-    url: ${LISTINGS_DB_URL:jdbc:postgresql://localhost:5433/listings_db}
-    username: ${LISTINGS_DB_USER:listings}
-    password: ${LISTINGS_DB_PASSWORD:listings}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/listings_db}
+    username: ${SPRING_DATASOURCE_USERNAME:listings}
+    password: ${SPRING_DATASOURCE_PASSWORD:listings}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -25,7 +25,7 @@ spring:
     locations: classpath:db/migration
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -48,7 +48,7 @@ kafka:
 minio:
   url: ${MINIO_URL:http://localhost:9000}
   access-key: ${MINIO_ACCESS_KEY:minioadmin}
-  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin123}
   bucket: ${MINIO_BUCKET:plantswap-photos}
 
 management:
