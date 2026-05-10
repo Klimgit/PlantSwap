@@ -6,7 +6,11 @@ import { dealsApi } from '../api/deals'
 import { useAuthStore } from '../store/authStore'
 import Spinner from '../components/Spinner'
 
-const TYPE_LABELS = { GIVE_AWAY: 'Отдам', SWAP: 'Обмен', SELL: 'Продам' }
+const TYPE_LABELS: Record<string, string> = {
+  GIVE_AWAY: 'Отдам',
+  SWAP: 'Обмен',
+  SELL: 'Продам',
+}
 
 export default function ListingDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -77,7 +81,7 @@ export default function ListingDetailPage() {
                 {listing.status === 'ACTIVE' ? 'Активно' : 'Закрыто'}
               </span>
               <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full font-medium">
-                {TYPE_LABELS[listing.type]}
+                {TYPE_LABELS[listing.type] ?? listing.type}
               </span>
             </div>
           </div>

@@ -4,9 +4,42 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PlantSwap — обменяйся растением</title>
+    <script>
+      (function () {
+        function showBanner(text) {
+          var id = 'plantswap-boot-error'
+          if (document.getElementById(id)) return
+          var d = document.createElement('div')
+          d.id = id
+          d.setAttribute('role', 'alert')
+          d.style.cssText =
+            'position:fixed;bottom:0;left:0;right:0;max-height:45vh;overflow:auto;padding:12px 14px;background:#fef2f2;color:#991b1b;border-top:1px solid #fecaca;font:12px/1.4 ui-monospace,monospace;z-index:2147483647;white-space:pre-wrap;word-break:break-word'
+          d.textContent = text
+          document.body.appendChild(d)
+        }
+        window.addEventListener('error', function (e) {
+          var msg = (e.error && e.error.stack) || e.message || String(e)
+          console.error('[PlantSwap]', e.error || e.message)
+          showBanner('Ошибка JS (см. также Console):\n' + msg)
+        })
+        window.addEventListener('unhandledrejection', function (e) {
+          var r = e.reason
+          var msg =
+            (r && typeof r === 'object' && 'stack' in r && r.stack) ||
+            (r && r.message) ||
+            String(r)
+          console.error('[PlantSwap] unhandledrejection', r)
+          showBanner('Необработанный Promise:\n' + msg)
+        })
+      })()
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div style="padding: 2rem; font-family: system-ui, sans-serif; color: #64748b; font-size: 14px">
+        Загрузка PlantSwap…
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
