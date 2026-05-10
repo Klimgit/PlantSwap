@@ -14,6 +14,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-autoconfigure")
     implementation("org.springframework:spring-web")
     implementation(libs.logstash.logback.encoder)
+    implementation("org.slf4j:slf4j-api")
 
     compileOnly("jakarta.servlet:jakarta.servlet-api")
 }

@@ -119,9 +119,9 @@ public class ListingService implements
     @Override
     @Transactional(readOnly = true)
     public PageDto<ListingSummaryDto> getUserListings(UUID ownerId, int page, int size) {
-        List<Listing> listings = listingRepository.findByOwnerId(OwnerId.of(ownerId), page, size);
-        long total = listingRepository.countAll(
-                new ListingFilter(null, null, null, null, null, null));
+        OwnerId oid = OwnerId.of(ownerId);
+        List<Listing> listings = listingRepository.findByOwnerId(oid, page, size);
+        long total = listingRepository.countByOwnerId(oid);
         return PageDto.of(listings.stream().map(this::toSummary).toList(), page, size, total);
     }
 

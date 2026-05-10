@@ -7,8 +7,8 @@ spring:
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5435/chat_db}
-    username: ${SPRING_DATASOURCE_USERNAME:chat}
-    password: ${SPRING_DATASOURCE_PASSWORD:chat}
+    username: ${SPRING_DATASOURCE_USERNAME:chat_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:chat_pass}
     driver-class-name: org.postgresql.Driver
 
   jpa:

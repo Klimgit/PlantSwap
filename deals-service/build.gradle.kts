@@ -11,6 +11,10 @@ dependencyManagement {
     }
 }
 
+springBoot {
+    mainClass.set("com.plantswap.deals.DealsServiceApplication")
+}
+
 dependencies {
     implementation(project(":shared-proto"))
 

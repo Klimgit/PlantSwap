@@ -10,6 +10,10 @@ dependencyManagement {
     }
 }
 
+springBoot {
+    mainClass.set("com.plantswap.chat.ChatServiceApplication")
+}
+
 dependencies {
     implementation(project(":shared-proto"))
 

@@ -116,7 +116,9 @@ services:
 
   # ── Auth Service ──────────────────────────────────────────────────────────
   auth-service:
-    build: ./auth-service
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
     container_name: plantswap-auth
     ports:
       - "8081:8081"
@@ -134,7 +136,9 @@ services:
 
   # ── Listings Service ──────────────────────────────────────────────────────
   listings-service:
-    build: ./listings-service
+    build:
+      context: .
+      dockerfile: listings-service/Dockerfile
     container_name: plantswap-listings
     ports:
       - "8082:8082"
@@ -157,7 +161,9 @@ services:
 
   # ── Deals Service ─────────────────────────────────────────────────────────
   deals-service:
-    build: ./deals-service
+    build:
+      context: .
+      dockerfile: deals-service/Dockerfile
     container_name: plantswap-deals
     ports:
       - "8083:8083"
@@ -176,7 +182,9 @@ services:
 
   # ── Chat Service ──────────────────────────────────────────────────────────
   chat-service:
-    build: ./chat-service
+    build:
+      context: .
+      dockerfile: chat-service/Dockerfile
     container_name: plantswap-chat
     ports:
       - "8084:8084"
@@ -194,7 +202,9 @@ services:
 
   # ── API Gateway ───────────────────────────────────────────────────────────
   gateway:
-    build: ./gateway
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
     container_name: plantswap-gateway
     ports:
       - "8080:8080"

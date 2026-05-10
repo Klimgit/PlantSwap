@@ -40,4 +40,9 @@ public class FavoriteRepositoryAdapter implements FavoriteRepository {
         return jpa.findListingIdsByUserId(userId, PageRequest.of(page, size))
                 .stream().map(ListingId::of).toList();
     }
+
+    @Override
+    public long countByUserId(UUID userId) {
+        return jpa.countByUserId(userId);
+    }
 }

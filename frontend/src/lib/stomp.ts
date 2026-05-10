@@ -1,6 +1,5 @@
 import { Client } from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
-import { useAuthStore } from '../store/authStore'
 
 let stompClient: Client | null = null
 

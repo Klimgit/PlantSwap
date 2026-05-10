@@ -7,8 +7,8 @@ spring:
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5434/deals_db}
-    username: ${SPRING_DATASOURCE_USERNAME:deals}
-    password: ${SPRING_DATASOURCE_PASSWORD:deals}
+    username: ${SPRING_DATASOURCE_USERNAME:deals_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:deals_pass}
     driver-class-name: org.postgresql.Driver
 
   jpa:

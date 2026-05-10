@@ -10,6 +10,10 @@ dependencyManagement {
     }
 }
 
+springBoot {
+    mainClass.set("com.plantswap.listings.ListingsServiceApplication")
+}
+
 dependencies {
     implementation(project(":shared-logging"))
     implementation(libs.spring.boot.starter.web)

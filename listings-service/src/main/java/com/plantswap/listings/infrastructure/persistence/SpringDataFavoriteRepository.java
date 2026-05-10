@@ -16,4 +16,6 @@ interface SpringDataFavoriteRepository extends JpaRepository<FavoriteJpaEntity, 
     @Query("SELECT f.listingId FROM FavoriteJpaEntity f WHERE f.userId = :userId ORDER BY f.createdAt DESC")
     List<UUID> findListingIdsByUserId(UUID userId,
             org.springframework.data.domain.Pageable pageable);
+
+    long countByUserId(UUID userId);
 }

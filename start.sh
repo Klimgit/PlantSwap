@@ -3,10 +3,11 @@
 # PlantSwap — скрипт локального запуска
 # =============================================================================
 # Использование:
-#   ./start.sh          — поднять ВСЁ (инфраструктура + все сервисы + фронтенд)
-#   ./start.sh --infra  — только инфраструктура (БД, Kafka, MinIO) + фронтенд dev
+#   ./start.sh          — поднять ВСЁ (Docker build + docker compose up)
+#   ./start.sh --infra  — только инфраструктура (БД, Kafka, MinIO)
+#                         фронтенд запускается отдельно: cd frontend && npm run dev
 #   ./start.sh --down   — остановить и удалить все контейнеры
-#   ./start.sh --logs   — прокинуть логи всех контейнеров
+#   ./start.sh --logs   — стримить логи всех контейнеров
 # =============================================================================
 
 set -euo pipefail
@@ -23,64 +24,53 @@ error()   { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
 
 # ── Проверка зависимостей ──────────────────────────────────────────────────────
 check_deps() {
-  for cmd in docker docker-compose java node npm; do
-    if ! command -v "$cmd" &>/dev/null; then
-      error "Команда '$cmd' не найдена. Установите её перед запуском."
-    fi
+  for cmd in docker; do
+    command -v "$cmd" &>/dev/null || error "Команда '$cmd' не найдена. Установите Docker Desktop."
   done
-  local java_ver; java_ver=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d. -f1)
-  if [[ "$java_ver" -lt 21 ]]; then
-    warn "Рекомендуется Java 21+. Установлена: $java_ver"
-  fi
+  docker info &>/dev/null || error "Docker daemon не запущен. Запустите Docker Desktop."
 }
 
-# ── Копируем .env если нет ────────────────────────────────────────────────────
+# ── .env ──────────────────────────────────────────────────────────────────────
 prepare_env() {
   if [[ ! -f .env ]]; then
     cp .env.example .env
-    warn ".env не найден — создан из .env.example. Проверьте JWT_SECRET перед деплоем!"
+    warn ".env не найден — создан из .env.example"
+    warn "Обязательно смените JWT_SECRET перед продакшн-деплоем!"
   fi
 }
 
-# ── Сборка backend ────────────────────────────────────────────────────────────
-build_backend() {
-  info "Сборка backend-сервисов (Gradle)..."
-  ./gradlew build -x test --parallel --quiet
-  success "Backend собран"
-}
-
-# ── Режим: только инфраструктура + фронтенд dev server ───────────────────────
+# ── Режим: только инфраструктура ──────────────────────────────────────────────
 mode_infra() {
-  info "Запуск инфраструктуры (БД × 4, Kafka, MinIO)..."
-  docker-compose up -d auth-db listings-db deals-db chat-db kafka minio
+  info "Запуск инфраструктуры (PostgreSQL ×4, Kafka, MinIO)..."
+  docker compose up -d auth-db listings-db deals-db chat-db kafka minio
 
-  info "Ожидание готовности сервисов..."
   wait_healthy "plantswap-auth-db"
   wait_healthy "plantswap-listings-db"
   wait_healthy "plantswap-deals-db"
   wait_healthy "plantswap-chat-db"
   wait_healthy "plantswap-kafka"
   wait_healthy "plantswap-minio"
+
   success "Инфраструктура готова"
-
-  info "Запуск фронтенда в режиме разработки (порт 5173)..."
-  info "Для работы нужно вручную запустить backend-сервисы."
-  info "После запуска всех сервисов откройте: http://localhost:5173"
-
-  cd frontend
-  npm install --silent
-  npm run dev
+  echo ""
+  echo -e "  ${GREEN}PostgreSQL auth:${NC}     localhost:5432"
+  echo -e "  ${GREEN}PostgreSQL listings:${NC} localhost:5433"
+  echo -e "  ${GREEN}PostgreSQL deals:${NC}    localhost:5434"
+  echo -e "  ${GREEN}PostgreSQL chat:${NC}     localhost:5435"
+  echo -e "  ${GREEN}Kafka:${NC}               localhost:9092"
+  echo -e "  ${GREEN}MinIO UI:${NC}            http://localhost:9001  (minioadmin / minioadmin123)"
+  echo ""
+  echo -e "  Теперь запустите backend-сервисы в IDE или отдельных терминалах,"
+  echo -e "  а фронтенд через: ${YELLOW}cd frontend && npm install && npm run dev${NC}"
 }
 
-# ── Режим: полный стек ────────────────────────────────────────────────────────
+# ── Режим: полный стек в Docker ───────────────────────────────────────────────
 mode_full() {
-  build_backend
-
   info "Сборка Docker-образов..."
-  docker-compose build --parallel
+  docker compose build --parallel
 
-  info "Запуск всех сервисов..."
-  docker-compose up -d
+  info "Запуск всех контейнеров..."
+  docker compose up -d
 
   info "Ожидание готовности сервисов..."
   wait_healthy "plantswap-auth-db"
@@ -92,33 +82,33 @@ mode_full() {
 
   success "PlantSwap запущен!"
   echo ""
-  echo -e "  ${GREEN}🌿 Приложение:${NC}  http://localhost:3000"
-  echo -e "  ${GREEN}🔀 Gateway:${NC}     http://localhost:8080"
-  echo -e "  ${GREEN}📦 MinIO UI:${NC}    http://localhost:9001  (minioadmin / minioadmin123)"
+  echo -e "  ${GREEN}🌿 Приложение:${NC}   http://localhost:3000"
+  echo -e "  ${GREEN}🔀 Gateway API:${NC}  http://localhost:8080"
+  echo -e "  ${GREEN}📦 MinIO UI:${NC}     http://localhost:9001  (minioadmin / minioadmin123)"
   echo ""
-  echo -e "  Логи: ${YELLOW}./start.sh --logs${NC}"
-  echo -e "  Стоп: ${YELLOW}./start.sh --down${NC}"
+  echo -e "  Логи:     ${YELLOW}./start.sh --logs${NC}"
+  echo -e "  Остановка: ${YELLOW}./start.sh --down${NC}"
 }
 
-# ── Вспомогательные ───────────────────────────────────────────────────────────
+# ── Вспомогательная функция ожидания ──────────────────────────────────────────
 wait_healthy() {
   local name="$1"
-  local max_attempts=30
-  local attempt=0
-  printf "  Ожидание %s " "$name"
-  while [[ $attempt -lt $max_attempts ]]; do
+  local max=30
+  local i=0
+  printf "  Ожидание %-35s" "$name"
+  while [[ $i -lt $max ]]; do
     local status
     status=$(docker inspect --format='{{.State.Health.Status}}' "$name" 2>/dev/null || echo "missing")
     if [[ "$status" == "healthy" ]]; then
-      echo " ✓"
+      echo -e " ${GREEN}✓${NC}"
       return 0
     fi
     printf "."
     sleep 2
-    ((attempt++))
+    ((i++))
   done
   echo ""
-  error "Сервис $name не стал healthy за $(( max_attempts * 2 )) секунд"
+  error "$name не стал healthy за $(( max * 2 )) сек. Проверьте логи: docker logs $name"
 }
 
 # ── Точка входа ───────────────────────────────────────────────────────────────
@@ -127,8 +117,8 @@ prepare_env
 
 case "${1:-}" in
   --infra)  mode_infra ;;
-  --down)   docker-compose down; success "Контейнеры остановлены" ;;
-  --logs)   docker-compose logs -f ;;
+  --down)   docker compose down; success "Контейнеры остановлены" ;;
+  --logs)   docker compose logs -f ;;
   "")       mode_full ;;
-  *)        error "Неизвестный параметр: $1. Используйте --infra, --down или --logs" ;;
+  *)        error "Неизвестный параметр: $1" ;;
 esac

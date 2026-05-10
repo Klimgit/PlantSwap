@@ -16,4 +16,6 @@ public interface FavoriteRepository {
     boolean exists(UUID userId, ListingId listingId);
 
     List<ListingId> findListingIdsByUserId(UUID userId, int page, int size);
+
+    long countByUserId(UUID userId);
 }

@@ -8,7 +8,6 @@ import com.plantswap.listings.domain.model.Listing;
 import com.plantswap.listings.domain.model.ListingId;
 import com.plantswap.listings.domain.model.ListingNotFoundException;
 import com.plantswap.listings.domain.repository.FavoriteRepository;
-import com.plantswap.listings.domain.repository.ListingFilter;
 import com.plantswap.listings.domain.repository.ListingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,11 +57,12 @@ public class FavoriteService implements FavoriteUseCase {
     @Override
     @Transactional(readOnly = true)
     public PageDto<ListingSummaryDto> getFavorites(UUID userId, int page, int size) {
+        long total = favoriteRepository.countByUserId(userId);
         List<ListingId> ids = favoriteRepository.findListingIdsByUserId(userId, page, size);
         List<ListingSummaryDto> summaries = ids.stream()
                 .flatMap(id -> listingRepository.findById(id).stream())
                 .map(listingService::toSummaryPublic)
                 .toList();
-        return PageDto.of(summaries, page, size, summaries.size());
+        return PageDto.of(summaries, page, size, total);
     }
 }
