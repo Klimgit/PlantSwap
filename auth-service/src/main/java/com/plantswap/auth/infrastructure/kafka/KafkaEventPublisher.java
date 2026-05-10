@@ -20,7 +20,7 @@ public class KafkaEventPublisher implements EventPublisherPort {
     private final String authEventsTopic;
 
     public KafkaEventPublisher(KafkaTemplate<String, Object> kafkaTemplate,
-                                @Value("${kafka.topics.auth-events}") String authEventsTopic) {
+                               @Value("${kafka.topics.auth-events}") String authEventsTopic) {
         this.kafkaTemplate = kafkaTemplate;
         this.authEventsTopic = authEventsTopic;
     }

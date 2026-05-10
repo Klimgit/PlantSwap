@@ -6,8 +6,13 @@ plugins {
 
 dependencyManagement {
     imports {
+        mavenBom("io.grpc:grpc-bom:${libs.versions.grpcJava.get()}")
         mavenBom("org.testcontainers:testcontainers-bom:${libs.versions.testcontainers.get()}")
     }
+}
+
+springBoot {
+    mainClass.set("com.plantswap.chat.ChatServiceApplication")
 }
 
 dependencies {

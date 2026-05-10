@@ -11,6 +11,10 @@ dependencyManagement {
     }
 }
 
+springBoot {
+    mainClass.set("com.plantswap.gateway.GatewayApplication")
+}
+
 dependencies {
     implementation(libs.spring.cloud.gateway)
     implementation(libs.spring.cloud.loadbalancer)

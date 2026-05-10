@@ -25,6 +25,7 @@ subprojects {
 
     tasks.withType<JavaCompile> {
         options.compilerArgs.addAll(listOf("-parameters"))
+        options.release.set(21)
     }
 
     tasks.withType<Test> {

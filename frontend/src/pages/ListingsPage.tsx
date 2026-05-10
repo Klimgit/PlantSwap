@@ -20,7 +20,7 @@ export default function ListingsPage() {
   const [city, setCity] = useState('')
   const [page, setPage] = useState(0)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ['listings', search, type, city, page],
     queryFn: () =>
       listingsApi.search({
@@ -73,7 +73,15 @@ export default function ListingsPage() {
 
       {isLoading ? (
         <Spinner className="py-16" />
-      ) : !data?.content.length ? (
+      ) : isError ? (
+        <div className="text-center py-16 text-red-600 text-sm max-w-md mx-auto">
+          <p className="font-medium mb-2">Не удалось загрузить объявления</p>
+          <p className="text-gray-500">
+            Проверьте, что Gateway (8080) и listings-service запущены.{' '}
+            {error instanceof Error ? error.message : ''}
+          </p>
+        </div>
+      ) : !data?.content?.length ? (
         <div className="text-center py-16 text-gray-400">
           <span className="text-5xl block mb-3">🌱</span>
           <p>Объявлений не найдено</p>

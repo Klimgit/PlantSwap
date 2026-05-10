@@ -30,8 +30,12 @@ export default function ListingCard({ listing }: { listing: ListingSummary }) {
             <h3 className="font-medium text-gray-900 line-clamp-2 text-sm leading-tight">
               {listing.title}
             </h3>
-            <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${TYPE_COLORS[listing.type]}`}>
-              {TYPE_LABELS[listing.type]}
+            <span
+              className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${
+                TYPE_COLORS[listing.type] ?? 'bg-gray-100 text-gray-700'
+              }`}
+            >
+              {TYPE_LABELS[listing.type as keyof typeof TYPE_LABELS] ?? listing.type}
             </span>
           </div>
           {listing.priceAmount != null && (

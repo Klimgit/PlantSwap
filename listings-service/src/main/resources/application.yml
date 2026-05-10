@@ -5,10 +5,15 @@ spring:
   application:
     name: listings-service
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
+
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/listings_db}
-    username: ${SPRING_DATASOURCE_USERNAME:listings}
-    password: ${SPRING_DATASOURCE_PASSWORD:listings}
+    username: ${SPRING_DATASOURCE_USERNAME:listings_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:listings_pass}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -26,6 +31,8 @@ spring:
 
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    admin:
+      fail-fast: false
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer

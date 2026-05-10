@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createJSONStorage, persist } from 'zustand/middleware'
+import { createSafeLocalStorage } from '../lib/safeStorage'
 
 interface AuthState {
   accessToken: string | null
@@ -22,6 +23,9 @@ export const useAuthStore = create<AuthState>()(
       setUser: (userId, username) => set({ userId, username }),
       logout: () => set({ accessToken: null, refreshToken: null, userId: null, username: null }),
     }),
-    { name: 'plantswap-auth' },
+    {
+      name: 'plantswap-auth',
+      storage: createJSONStorage(() => createSafeLocalStorage()),
+    },
   ),
 )

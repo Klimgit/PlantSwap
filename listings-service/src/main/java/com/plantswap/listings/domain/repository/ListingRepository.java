@@ -21,5 +21,7 @@ public interface ListingRepository {
 
     List<Listing> findByOwnerId(OwnerId ownerId, int page, int size);
 
+    long countByOwnerId(OwnerId ownerId);
+
     void delete(ListingId id);
 }

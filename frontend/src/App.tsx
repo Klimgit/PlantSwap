@@ -18,14 +18,14 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* Страницы с шапкой */}
+      {/* Страницы с шапкой — статичный путь /listings/new ДО динамического /listings/:id */}
       <Route path="/" element={<Layout><ListingsPage /></Layout>} />
-      <Route path="/listings/:id" element={<Layout><ListingDetailPage /></Layout>} />
-
-      {/* Защищённые маршруты */}
       <Route path="/listings/new" element={
         <ProtectedRoute><Layout><CreateListingPage /></Layout></ProtectedRoute>
       } />
+      <Route path="/listings/:id" element={<Layout><ListingDetailPage /></Layout>} />
+
+      {/* Защищённые маршруты */}
       <Route path="/my-listings" element={
         <ProtectedRoute><Layout><MyListingsPage /></Layout></ProtectedRoute>
       } />

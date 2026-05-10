@@ -1,6 +1,8 @@
 services:
 
   # ── Kafka (KRaft, no Zookeeper) ──────────────────────────────────────────
+  # INTERNAL @29092 — сервисы в Docker (bootstrap kafka:29092).
+  # EXTERNAL @9092 — хост / локальный bootRun (bootstrap localhost:9092).
   kafka:
     image: apache/kafka:3.8.0
     container_name: plantswap-kafka
@@ -9,11 +11,12 @@ services:
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qg=="
@@ -116,7 +119,9 @@ services:
 
   # ── Auth Service ──────────────────────────────────────────────────────────
   auth-service:
-    build: ./auth-service
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
     container_name: plantswap-auth
     ports:
       - "8081:8081"
@@ -124,7 +129,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://auth-db:5432/auth_db
       SPRING_DATASOURCE_USERNAME: auth_user
       SPRING_DATASOURCE_PASSWORD: auth_pass
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       JWT_SECRET: ${JWT_SECRET:-super-secret-key-for-development-only-change-in-prod}
     depends_on:
       auth-db:
@@ -134,7 +139,9 @@ services:
 
   # ── Listings Service ──────────────────────────────────────────────────────
   listings-service:
-    build: ./listings-service
+    build:
+      context: .
+      dockerfile: listings-service/Dockerfile
     container_name: plantswap-listings
     ports:
       - "8082:8082"
@@ -142,7 +149,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://listings-db:5432/listings_db
       SPRING_DATASOURCE_USERNAME: listings_user
       SPRING_DATASOURCE_PASSWORD: listings_pass
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       MINIO_URL: http://minio:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin123
@@ -157,7 +164,9 @@ services:
 
   # ── Deals Service ─────────────────────────────────────────────────────────
   deals-service:
-    build: ./deals-service
+    build:
+      context: .
+      dockerfile: deals-service/Dockerfile
     container_name: plantswap-deals
     ports:
       - "8083:8083"
@@ -166,7 +175,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://deals-db:5432/deals_db
       SPRING_DATASOURCE_USERNAME: deals_user
       SPRING_DATASOURCE_PASSWORD: deals_pass
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       LISTINGS_SERVICE_URL: http://listings-service:8082
     depends_on:
       deals-db:
@@ -176,7 +185,9 @@ services:
 
   # ── Chat Service ──────────────────────────────────────────────────────────
   chat-service:
-    build: ./chat-service
+    build:
+      context: .
+      dockerfile: chat-service/Dockerfile
     container_name: plantswap-chat
     ports:
       - "8084:8084"
@@ -184,7 +195,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://chat-db:5432/chat_db
       SPRING_DATASOURCE_USERNAME: chat_user
       SPRING_DATASOURCE_PASSWORD: chat_pass
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       GRPC_DEALS_ADDRESS: static://deals-service:9090
     depends_on:
       chat-db:
@@ -194,7 +205,9 @@ services:
 
   # ── API Gateway ───────────────────────────────────────────────────────────
   gateway:
-    build: ./gateway
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
     container_name: plantswap-gateway
     ports:
       - "8080:8080"

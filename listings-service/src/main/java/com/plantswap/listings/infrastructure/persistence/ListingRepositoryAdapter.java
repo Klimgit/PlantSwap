@@ -62,6 +62,14 @@ public class ListingRepositoryAdapter implements ListingRepository {
     }
 
     @Override
+    public long countByOwnerId(OwnerId ownerId) {
+        ListingFilter filter = new ListingFilter(null, null, null, null, null, null);
+        Specification<ListingJpaEntity> spec = toSpec(filter)
+                .and((root, q, cb) -> cb.equal(root.get("ownerId"), ownerId.value()));
+        return jpa.count(spec);
+    }
+
+    @Override
     public void delete(ListingId id) {
         jpa.deleteById(id.value());
     }

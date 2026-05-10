@@ -18,10 +18,14 @@ export default function RegisterPage() {
     setError('')
     setLoading(true)
     try {
-      const { data } = await authApi.register(
-        form.email, form.username, form.password, form.city || undefined,
+      await authApi.register(
+        form.username,
+        form.email,
+        form.password,
+        form.city || undefined,
       )
-      setTokens(data.accessToken, data.refreshToken)
+      const { data: tokens } = await authApi.login(form.email, form.password)
+      setTokens(tokens.accessToken, tokens.refreshToken)
       const { data: profile } = await authApi.getMe()
       setUser(profile.id, profile.username)
       navigate('/')
