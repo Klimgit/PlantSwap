@@ -8,6 +8,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 /**
  * Адаптер публикации доменных событий в Kafka.
  */
@@ -15,6 +19,8 @@ import org.springframework.stereotype.Component;
 public class KafkaEventPublisher implements EventPublisherPort {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaEventPublisher.class);
+
+    private static final int SEND_TIMEOUT_SEC = 30;
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final String authEventsTopic;
@@ -28,6 +34,21 @@ public class KafkaEventPublisher implements EventPublisherPort {
     @Override
     public void publish(DomainEvent event) {
         log.debug("Публикую событие {} в топик {}", event.eventType(), authEventsTopic);
-        kafkaTemplate.send(authEventsTopic, event.eventId().toString(), event);
+        try {
+            kafkaTemplate.send(authEventsTopic, event.eventId().toString(), event)
+                    .get(SEND_TIMEOUT_SEC, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Публикация в Kafka прервана", e);
+        } catch (ExecutionException e) {
+            Throwable c = e.getCause() != null ? e.getCause() : e;
+            log.error("Не удалось отправить событие {} в Kafka", event.eventType(), c);
+            if (c instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new IllegalStateException("Не удалось отправить событие в Kafka", c);
+        } catch (TimeoutException e) {
+            throw new IllegalStateException("Таймаут отправки события в Kafka", e);
+        }
     }
 }

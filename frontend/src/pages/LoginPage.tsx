@@ -11,6 +11,11 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  const apiErr = (err: unknown) => {
+    const d = (err as { response?: { data?: { message?: string } } })?.response?.data
+    return d?.message
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -18,11 +23,27 @@ export default function LoginPage() {
     try {
       const { data } = await authApi.login(email, password)
       setTokens(data.accessToken, data.refreshToken)
-      const { data: profile } = await authApi.getMe()
-      setUser(profile.id, profile.username)
-      navigate('/')
-    } catch {
-      setError('Неверный email или пароль')
+      try {
+        const { data: profile } = await authApi.getMe()
+        setUser(profile.id, profile.username)
+        navigate('/')
+      } catch (profileErr: unknown) {
+        const st = (profileErr as { response?: { status?: number } })?.response?.status
+        const msg = apiErr(profileErr)
+        if (msg) setError(msg)
+        else if (st === 401)
+          setError(
+            'Вход выполнен, но шлюз отклонил токен: разный JWT_SECRET у API Gateway и auth-service. Остановите оба процесса и запустите с одним JWT_SECRET (см. .env.example), затем войдите снова.',
+          )
+        else setError('Не удалось загрузить профиль. Проверьте, что gateway доступен.')
+      }
+    } catch (err: unknown) {
+      const st = (err as { response?: { status?: number } })?.response?.status
+      const msg = apiErr(err)
+      if (msg) setError(msg)
+      else if (st === 401) setError('Неверный email или пароль')
+      else if (st === 404) setError('Пользователь с таким email не найден')
+      else setError('Не удалось связаться с сервером. Проверьте сеть и что auth-service запущен.')
     } finally {
       setLoading(false)
     }

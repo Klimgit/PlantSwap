@@ -60,6 +60,7 @@ public class MinioPhotoStorage implements PhotoStoragePort {
 
     @Override
     public String getPublicUrl(String s3Key) {
-        return "%s/%s/%s".formatted(props.url(), props.bucket(), s3Key);
+        return "%s/%s/%s".formatted(props.effectivePublicBaseUrl(), props.bucket(), s3Key);
     }
 }
+

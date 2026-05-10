@@ -13,6 +13,11 @@ export default function RegisterPage() {
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }))
 
+  const apiErrorMessage = (err: unknown, fallback: string) => {
+    const d = (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data
+    return d?.message ?? d?.error ?? fallback
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -24,15 +29,28 @@ export default function RegisterPage() {
         form.password,
         form.city || undefined,
       )
-      const { data: tokens } = await authApi.login(form.email, form.password)
-      setTokens(tokens.accessToken, tokens.refreshToken)
-      const { data: profile } = await authApi.getMe()
-      setUser(profile.id, profile.username)
-      navigate('/')
+      try {
+        const { data: tokens } = await authApi.login(form.email, form.password)
+        setTokens(tokens.accessToken, tokens.refreshToken)
+        const { data: profile } = await authApi.getMe()
+        setUser(profile.id, profile.username)
+        navigate('/')
+      } catch (inner: unknown) {
+        const st = (inner as { response?: { status?: number } })?.response?.status
+        const msg = apiErrorMessage(inner, '')
+        if (msg)
+          setError(msg)
+        else if (st === 401)
+          setError(
+            'Регистрация прошла, но шлюз отклонил токен: задайте одинаковый JWT_SECRET для API Gateway и auth-service (см. .env.example), перезапустите оба сервиса и войдите вручную.',
+          )
+        else
+          setError(
+            'Аккаунт создан, но автоматический вход не удался. Попробуйте войти вручную или проверьте gateway.',
+          )
+      }
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })
-        ?.response?.data?.message
-      setError(msg ?? 'Ошибка регистрации. Проверьте данные.')
+      setError(apiErrorMessage(err, 'Ошибка регистрации. Проверьте данные.'))
     } finally {
       setLoading(false)
     }

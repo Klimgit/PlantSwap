@@ -6,6 +6,7 @@ import RegisterPage from './pages/RegisterPage'
 import ListingsPage from './pages/ListingsPage'
 import ListingDetailPage from './pages/ListingDetailPage'
 import CreateListingPage from './pages/CreateListingPage'
+import EditListingPage from './pages/EditListingPage'
 import MyListingsPage from './pages/MyListingsPage'
 import DealsPage from './pages/DealsPage'
 import DealDetailPage from './pages/DealDetailPage'
@@ -22,6 +23,9 @@ export default function App() {
       <Route path="/" element={<Layout><ListingsPage /></Layout>} />
       <Route path="/listings/new" element={
         <ProtectedRoute><Layout><CreateListingPage /></Layout></ProtectedRoute>
+      } />
+      <Route path="/listings/:id/edit" element={
+        <ProtectedRoute><Layout><EditListingPage /></Layout></ProtectedRoute>
       } />
       <Route path="/listings/:id" element={<Layout><ListingDetailPage /></Layout>} />
 

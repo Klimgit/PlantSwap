@@ -11,6 +11,7 @@ import java.util.UUID;
 public record DealCancelledEvent(
         UUID eventId,
         Instant occurredAt,
+        String eventType,
         DealId dealId,
         ListingId listingId,
         OwnerId ownerId,
@@ -18,13 +19,10 @@ public record DealCancelledEvent(
         UUID cancelledBy
 ) implements DomainEvent {
 
-    @Override
-    public String eventType() { return "DEAL_CANCELLED"; }
-
     public static DealCancelledEvent of(DealId dealId, ListingId listingId,
                                          OwnerId ownerId, RequesterId requesterId,
                                          UUID cancelledBy) {
-        return new DealCancelledEvent(UUID.randomUUID(), Instant.now(),
+        return new DealCancelledEvent(UUID.randomUUID(), Instant.now(), "DEAL_CANCELLED",
                 dealId, listingId, ownerId, requesterId, cancelledBy);
     }
 }

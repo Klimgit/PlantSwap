@@ -29,9 +29,10 @@ export default function ChatWindow({ dealId }: { dealId: string }) {
   useEffect(() => {
     if (!accessToken) return
 
+    const qs = `access_token=${encodeURIComponent(accessToken)}`
     const client = new Client({
       webSocketFactory: () =>
-        new SockJS('/ws', null, {
+        new SockJS(`/ws?${qs}`, null, {
           transports: ['websocket', 'xhr-streaming', 'xhr-polling'],
         }),
       connectHeaders: { Authorization: `Bearer ${accessToken}` },

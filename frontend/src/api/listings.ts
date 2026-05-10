@@ -36,9 +36,9 @@ export const listingsApi = {
   uploadPhoto: (id: string, file: File) => {
     const form = new FormData()
     form.append('file', file)
-    return api.post<Photo>(`/listings/${id}/photos`, form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+    // Не задавать Content-Type вручную: Axios подставит multipart с boundary.
+    // Иначе загрузка через Gateway ломается, фото не попадают в MinIO.
+    return api.post<Photo>(`/listings/${id}/photos`, form)
   },
 
   removePhoto: (listingId: string, photoId: string) =>

@@ -9,4 +9,6 @@ import java.util.UUID;
 interface SpringDataListingRepository
         extends JpaRepository<ListingJpaEntity, UUID>,
                 JpaSpecificationExecutor<ListingJpaEntity> {
+
+    long countByOwnerId(UUID ownerId);
 }
