@@ -11,18 +11,16 @@ import java.util.UUID;
 public record DealRejectedEvent(
         UUID eventId,
         Instant occurredAt,
+        String eventType,
         DealId dealId,
         ListingId listingId,
         OwnerId ownerId,
         RequesterId requesterId
 ) implements DomainEvent {
 
-    @Override
-    public String eventType() { return "DEAL_REJECTED"; }
-
     public static DealRejectedEvent of(DealId dealId, ListingId listingId,
                                         OwnerId ownerId, RequesterId requesterId) {
-        return new DealRejectedEvent(UUID.randomUUID(), Instant.now(),
+        return new DealRejectedEvent(UUID.randomUUID(), Instant.now(), "DEAL_REJECTED",
                 dealId, listingId, ownerId, requesterId);
     }
 }

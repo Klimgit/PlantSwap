@@ -41,11 +41,8 @@ spring:
     consumer:
       group-id: listings-service
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       auto-offset-reset: earliest
-      properties:
-        spring.json.trusted.packages: "com.plantswap.listings.infrastructure.kafka"
-        spring.json.value.default.type: "com.plantswap.listings.infrastructure.kafka.DealEventMessage"
 
 kafka:
   topics:
@@ -54,6 +51,7 @@ kafka:
 
 minio:
   url: ${MINIO_URL:http://localhost:9000}
+  public-url: ${MINIO_PUBLIC_URL:}
   access-key: ${MINIO_ACCESS_KEY:minioadmin}
   secret-key: ${MINIO_SECRET_KEY:minioadmin123}
   bucket: ${MINIO_BUCKET:plantswap-photos}

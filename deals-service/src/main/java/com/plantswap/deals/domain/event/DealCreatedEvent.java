@@ -11,18 +11,16 @@ import java.util.UUID;
 public record DealCreatedEvent(
         UUID eventId,
         Instant occurredAt,
+        String eventType,
         DealId dealId,
         ListingId listingId,
         OwnerId ownerId,
         RequesterId requesterId
 ) implements DomainEvent {
 
-    @Override
-    public String eventType() { return "DEAL_CREATED"; }
-
     public static DealCreatedEvent of(DealId dealId, ListingId listingId,
                                        OwnerId ownerId, RequesterId requesterId) {
-        return new DealCreatedEvent(UUID.randomUUID(), Instant.now(),
+        return new DealCreatedEvent(UUID.randomUUID(), Instant.now(), "DEAL_CREATED",
                 dealId, listingId, ownerId, requesterId);
     }
 }

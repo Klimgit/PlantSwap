@@ -5,22 +5,23 @@ spring:
   application:
     name: gateway
 
+  codec:
+    max-in-memory-size: 16MB
+
   cloud:
     gateway:
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
 
       routes:
-        # ── Chat: WebSocket и сообщения ──
-        - id: chat-messages
+        # ── Chat: REST (/conversations/**) и SockJS (/ws/**) — до маршрута /deals/**
+        - id: chat-rest
           uri: ${CHAT_SERVICE_URL:http://localhost:8084}
           predicates:
-            - Path=/deals/*/messages, /deals/*/messages/**
-          filters:
-            - RewritePath=/deals/(?<dealId>[^/]+)/messages(?<rest>.*), /deals/$\{dealId}/messages$\{rest}
+            - Path=/conversations/**
 
         - id: chat-websocket
-          uri: ${CHAT_SERVICE_URL:lb://chat-service}
+          uri: ${CHAT_SERVICE_URL:http://localhost:8084}
           predicates:
             - Path=/ws/**
 
@@ -43,7 +44,7 @@ spring:
             - Path=/deals/**
 
 jwt:
-  secret: ${JWT_SECRET:super-secret-key-for-development-only-32chars}
+  secret: ${JWT_SECRET:super-secret-key-for-development-only-change-in-prod}
 
 gateway:
   public-paths:

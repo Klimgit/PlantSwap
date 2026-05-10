@@ -1,15 +1,19 @@
 package com.plantswap.gateway.filter;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.plantswap.gateway.config.PublicPathsProperties;
 import com.plantswap.gateway.security.JwtValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
@@ -17,7 +21,11 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -35,11 +43,15 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     private static final String HEADER_REQUEST_ID    = "X-Request-Id";
 
     private final JwtValidator jwtValidator;
+    private final ObjectMapper objectMapper;
     private final List<String> publicPaths;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-    public JwtAuthFilter(JwtValidator jwtValidator, PublicPathsProperties publicPathsProperties) {
+    public JwtAuthFilter(JwtValidator jwtValidator,
+                         ObjectMapper objectMapper,
+                         PublicPathsProperties publicPathsProperties) {
         this.jwtValidator = jwtValidator;
+        this.objectMapper = objectMapper;
         this.publicPaths = publicPathsProperties.publicPaths();
     }
 
@@ -67,12 +79,16 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         }
 
         String authHeader = request.getHeaders().getFirst(HEADER_AUTHORIZATION);
-        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
-            log.warn("Отсутствует Authorization заголовок: {} {}", request.getMethod(), path);
+        String token = null;
+        if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
+            token = authHeader.substring(BEARER_PREFIX.length());
+        } else if (path.startsWith("/ws")) {
+            token = extractAccessTokenFromQuery(query);
+        }
+        if (token == null || token.isBlank()) {
+            log.warn("Отсутствует JWT (Authorization или access_token): {} {}", request.getMethod(), path);
             return unauthorized(exchange.getResponse(), "Требуется авторизация");
         }
-
-        String token = authHeader.substring(BEARER_PREFIX.length());
 
         return jwtValidator.extractUserId(token)
                 .map(userId -> {
@@ -135,9 +151,39 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                 .build();
     }
 
+    /** Query-параметр для SockJS; заголовок Authorization на первых GET часто недоступен в браузере. */
+    private static String extractAccessTokenFromQuery(String rawQuery) {
+        if (rawQuery == null || rawQuery.isBlank()) {
+            return null;
+        }
+        for (String part : rawQuery.split("&")) {
+            int eq = part.indexOf('=');
+            if (eq <= 0) {
+                continue;
+            }
+            String key = URLDecoder.decode(part.substring(0, eq), StandardCharsets.UTF_8);
+            if ("access_token".equals(key)) {
+                return URLDecoder.decode(part.substring(eq + 1), StandardCharsets.UTF_8);
+            }
+        }
+        return null;
+    }
+
     private Mono<Void> unauthorized(ServerHttpResponse response, String reason) {
         response.setStatusCode(HttpStatus.UNAUTHORIZED);
         response.getHeaders().add("X-Error", reason);
-        return response.setComplete();
+        response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("status", HttpStatus.UNAUTHORIZED.value());
+        body.put("error", "UNAUTHORIZED");
+        body.put("message", reason);
+        try {
+            byte[] bytes = objectMapper.writeValueAsBytes(body);
+            DataBuffer buffer = response.bufferFactory().wrap(bytes);
+            return response.writeWith(Mono.just(buffer));
+        } catch (JsonProcessingException e) {
+            log.warn("Не удалось сериализовать ответ 401", e);
+            return response.setComplete();
+        }
     }
 }
